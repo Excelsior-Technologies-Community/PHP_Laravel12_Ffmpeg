@@ -679,6 +679,35 @@ View videos: http://127.0.0.1:8000/videos
 
 ------------------------------------------------------------------------
 
+## Edit php.ini 
+
+- If any error show related Video file size
+
+Open php.ini, search each line and update:
+
+```
+upload_max_filesize = 100M
+post_max_size = 120M
+memory_limit = 512M
+max_execution_time = 300
+max_input_time = 300
+```
+Save the file.
+
+### Restart Apache (most important)
+
+Do this exactly:
+
+- Open XAMPP Control Panel
+
+- Click Stop on Apache
+
+- Wait 5 seconds
+
+- Click Start again
+
+------------------------------------------------------------------------
+
 ## Output
 
 ### Upload Page
