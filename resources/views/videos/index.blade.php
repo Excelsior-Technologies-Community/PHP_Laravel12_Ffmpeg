@@ -5,107 +5,105 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Video Library</title>
 
-    {{-- Tailwind CDN --}}
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Bootstrap CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 
-<body class="bg-gradient-to-br from-slate-900 via-gray-900 to-black min-h-screen text-white">
+<body class="bg-dark text-light">
 
-    {{-- Page Container --}}
-    <div class="max-w-7xl mx-auto px-6 py-10">
+<div class="container py-5">
 
-        {{-- Header --}}
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-10">
-            <h1 class="text-4xl font-bold tracking-tight">
-                🎬 Video Library
-            </h1>
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+        <h2>🎬 Video Library</h2>
 
-            <a href="{{ route('videos.upload.form') }}"
-               class="mt-4 md:mt-0 inline-block px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 transition font-semibold shadow-lg">
-                + Upload New Video
-            </a>
+        <a href="{{ route('videos.upload.form') }}" class="btn btn-primary">
+            + Upload Video
+        </a>
+    </div>
+
+    <!-- Search -->
+    <form method="GET" action="{{ route('videos.index') }}" class="mb-4">
+        <input type="text" name="search" value="{{ request('search') }}"
+               class="form-control w-50"
+               placeholder="Search videos...">
+    </form>
+
+    <!-- Success -->
+    @if(session('success'))
+        <div class="alert alert-success">
+            {{ session('success') }}
         </div>
+    @endif
 
-        {{-- Success Message --}}
-        @if(session('success'))
-            <div class="mb-6 p-4 rounded-lg bg-green-600/20 border border-green-500 text-green-300">
-                {{ session('success') }}
-            </div>
-        @endif
+    <!-- Empty -->
+    @if($videos->isEmpty())
+        <div class="text-center p-5 bg-secondary rounded">
+            <p>No videos found</p>
+        </div>
+    @else
 
-        {{-- Empty State --}}
-        @if($videos->isEmpty())
-            <div class="text-center py-20 bg-white/5 border border-white/10 rounded-2xl">
-                <p class="text-gray-400 text-lg">No videos uploaded yet.</p>
+    <!-- Grid -->
+    <div class="row g-4">
 
-                <a href="{{ route('videos.upload.form') }}"
-                   class="inline-block mt-4 px-5 py-2 bg-indigo-600 rounded-lg hover:bg-indigo-700">
-                    Upload First Video
-                </a>
-            </div>
-        @else
+        @foreach($videos as $video)
+        <div class="col-md-4">
 
-        {{-- Video Grid --}}
-        <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="card bg-secondary text-light">
 
-            @foreach($videos as $video)
-                <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl overflow-hidden shadow-xl hover:scale-[1.02] transition">
+                <!-- Thumbnail -->
+                <img src="{{ asset('storage/uploads/'.$video->thumbnail) }}"
+                     class="card-img-top"
+                     style="height:200px; object-fit:cover;">
 
-                    {{-- Thumbnail --}}
-                    <div class="aspect-video bg-black">
-                        <img
-                            src="{{ asset('storage/uploads/'.$video->thumbnail) }}"
-                            alt="{{ $video->title }}"
-                            class="w-full h-full object-cover"
-                        >
+                <div class="card-body">
+
+                    <!-- Title -->
+                    <h5 class="card-title">{{ $video->title }}</h5>
+
+                    <!-- Video -->
+                    <video controls class="w-100 mb-2">
+                        <source src="{{ asset('storage/uploads/'.$video->filename) }}">
+                    </video>
+
+                    <!-- Meta -->
+                    <small>
+                        ⏱ {{ $video->duration ?? 'N/A' }} <br>
+                        📦 {{ $video->size ?? 'N/A' }}
+                    </small>
+
+                    <!-- Actions -->
+                    <div class="d-flex justify-content-between mt-3">
+
+                        <a href="{{ route('videos.download', $video->filename) }}"
+                           class="btn btn-success btn-sm">
+                            Download
+                        </a>
+
+                        <form action="{{ route('videos.delete', $video->id) }}"
+                              method="POST"
+                              onsubmit="return confirm('Delete this video?');">
+                            @csrf
+                            @method('DELETE')
+
+                            <button class="btn btn-danger btn-sm">
+                                Delete
+                            </button>
+                        </form>
+
                     </div>
 
-                    {{-- Card Content --}}
-                    <div class="p-5 space-y-4">
-
-                        {{-- Title --}}
-                        <h2 class="text-lg font-semibold line-clamp-1">
-                            {{ $video->title }}
-                        </h2>
-
-                        {{-- Video Player --}}
-                        <video controls class="w-full rounded-lg border border-white/10">
-                            <source src="{{ asset('storage/uploads/'.$video->filename) }}" type="video/mp4">
-                            Your browser does not support the video tag.
-                        </video>
-
-                        {{-- Actions --}}
-                        <div class="flex items-center justify-between pt-2">
-
-                            <span class="text-xs text-gray-400">
-                                Uploaded {{ $video->created_at->diffForHumans() }}
-                            </span>
-
-                            {{-- Delete Button (future feature) --}}
-                            <form action="{{ route('videos.delete', $video->id) }}" method="POST"
-                                  onsubmit="return confirm('Are you sure you want to delete this video?');">
-                                @csrf
-                                @method('DELETE')
-
-                                <button type="submit"
-                                        class="text-red-400 hover:text-red-500 text-sm font-medium">
-                                    Delete
-                                </button>
-                            </form>
-                        </div>
-                    </div>
                 </div>
-            @endforeach
+
+            </div>
 
         </div>
-        @endif
-
-        {{-- Footer --}}
-        <p class="text-center text-gray-500 text-xs mt-16">
-            Laravel 12 • FFMpeg Processing • Modern UI 2026
-        </p>
+        @endforeach
 
     </div>
+    @endif
+
+</div>
 
 </body>
 </html>

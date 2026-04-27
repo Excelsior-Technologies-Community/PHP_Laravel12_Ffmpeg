@@ -771,4 +771,7 @@ PHP_Laravel12_Ffmpeg/
 
 Your PHP_Laravel12_Ffmpeg Project is now ready!
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> development

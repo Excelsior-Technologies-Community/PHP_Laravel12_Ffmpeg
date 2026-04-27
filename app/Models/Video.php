@@ -10,5 +10,7 @@ class Video extends Model
         'title',
         'filename',
         'thumbnail',
+        'duration',
+        'size',
     ];
 }
