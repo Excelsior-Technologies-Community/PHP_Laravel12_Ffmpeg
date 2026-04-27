@@ -3,118 +3,93 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use ProtoneMedia\LaravelFFMpeg\Support\FFMpeg;
 use App\Models\Video;
+use ProtoneMedia\LaravelFFMpeg\Support\FFMpeg;
 use FFMpeg\FFProbe;
 use FFMpeg\Format\Video\X264;
 use Illuminate\Support\Facades\Storage;
 
 class VideoController extends Controller
 {
-    /**
-     * Display all videos
-     */
-    public function index()
+    // Show videos + search
+    public function index(Request $request)
     {
-        $videos = Video::latest()->get();
+        $query = Video::query();
+
+        if ($request->search) {
+            $query->where('title', 'like', '%' . $request->search . '%');
+        }
+
+        $videos = $query->latest()->get();
+
         return view('videos.index', compact('videos'));
     }
 
-    /**
-     * Upload and process video
-     */
+    // Upload + process
     public function upload(Request $request)
     {
         $request->validate([
             'title' => 'required|string|max:255',
-            'video' => 'required|mimes:mp4,mov,avi|max:102400', // 100MB
+            'video' => 'required|mimes:mp4,mov,avi|max:102400',
         ]);
 
         $videoFile = $request->file('video');
         $filename = time() . '_' . $videoFile->getClientOriginalName();
 
-        // Store original video
         $path = $videoFile->storeAs('uploads', $filename, 'public');
+        $fullPath = storage_path('app/public/' . $path);
 
-        /*
-        |--------------------------------------------------------------------------
-        | 1. Generate Thumbnail
-        |--------------------------------------------------------------------------
-        */
-        $thumbnail = 'thumb_' . pathinfo($filename, PATHINFO_FILENAME) . '.png';
-
-        FFMpeg::fromDisk('public')
-            ->open($path)
-            ->getFrameFromSeconds(2)
-            ->export()
-            ->toDisk('public')
-            ->save('uploads/' . $thumbnail);
-
-        /*
-        |--------------------------------------------------------------------------
-        | 2. Convert to MP4 (X264)
-        |--------------------------------------------------------------------------
-        */
-        FFMpeg::fromDisk('public')
-            ->open($path)
-            ->export()
-            ->inFormat(new X264)
-            ->toDisk('public')
-            ->save('uploads/converted_' . $filename);
-
-        /*
-        |--------------------------------------------------------------------------
-        | 3. Resize Video
-        |--------------------------------------------------------------------------
-        */
-        FFMpeg::fromDisk('public')
-            ->open($path)
-            ->export()
-            ->inFormat(new X264)
-            ->resize(320, 240)
-            ->toDisk('public')
-            ->save('uploads/resized_' . $filename);
-
-        /*
-        |--------------------------------------------------------------------------
-        | 4. Extract Audio (only if audio stream exists)
-        |--------------------------------------------------------------------------
-        */
-        $ffprobe = FFProbe::create([
-            'ffprobe.binaries' => env('FFPROBE_BINARIES'),
-            'ffmpeg.binaries'  => env('FFMPEG_BINARIES'),
+        // FFProbe
+        $ffprobe = \FFMpeg\FFProbe::create([
+            'ffprobe.binaries' => 'C:\\ffmpeg\\bin\\ffprobe.exe',
+            'ffmpeg.binaries' => 'C:\\ffmpeg\\bin\\ffmpeg.exe',
         ]);
 
-        $fullPath = storage_path('app/public/' . $path);
-        $audioStreams = $ffprobe->streams($fullPath)->audios();
+        $duration = $ffprobe->format($fullPath)->get('duration');
+        $size = filesize($fullPath);
 
-        if ($audioStreams->count() > 0) {
-            FFMpeg::fromDisk('public')
+        $durationFormatted = gmdate("H:i:s", (int) $duration);
+        $sizeFormatted = round($size / 1024 / 1024, 2) . ' MB';
+
+        // ONLY Thumbnail (fast)
+        $thumbnail = 'thumb_' . pathinfo($filename, PATHINFO_FILENAME) . '.png';
+
+        try {
+            \ProtoneMedia\LaravelFFMpeg\Support\FFMpeg::fromDisk('public')
                 ->open($path)
+                ->getFrameFromSeconds(1)
                 ->export()
-                ->inFormat(new \FFMpeg\Format\Audio\Mp3())   
                 ->toDisk('public')
-                ->save('uploads/audio_' . pathinfo($filename, PATHINFO_FILENAME) . '.mp3');
+                ->save('uploads/' . $thumbnail);
+        } catch (\Exception $e) {
+            $thumbnail = null;
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | 5. Save in Database
-        |--------------------------------------------------------------------------
-        */
         Video::create([
             'title' => $request->title,
             'filename' => $filename,
             'thumbnail' => $thumbnail,
+            'duration' => $durationFormatted,
+            'size' => $sizeFormatted,
         ]);
 
         return redirect()->route('videos.index')
-            ->with('success', 'Video uploaded and processed successfully!');
+            ->with('success', 'Video uploaded successfully!');
     }
 
-    /**
-     * Delete video and all generated files
-     */
+    // Download
+    public function download($file)
+    {
+        $path = storage_path('app/public/uploads/' . $file);
+
+        if (!file_exists($path)) {
+            abort(404);
+        }
+
+        return response()->download($path);
+    }
+
+    // Delete
     public function delete($id)
     {
         $video = Video::findOrFail($id);
@@ -135,7 +110,6 @@ class VideoController extends Controller
 
         $video->delete();
 
-        return redirect()->route('videos.index')
-            ->with('success', 'Video deleted successfully.');
+        return redirect()->route('videos.index')->with('success', 'Deleted!');
     }
 }
