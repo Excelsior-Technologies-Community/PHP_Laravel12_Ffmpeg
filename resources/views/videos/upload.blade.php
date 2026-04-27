@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
     {{-- Tailwind CDN (for quick setup) --}}
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
+
 <body class="bg-gradient-to-br from-slate-900 via-gray-900 to-black min-h-screen flex items-center justify-center">
 
     <div class="w-full max-w-xl bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-8">
@@ -44,13 +46,9 @@
                 <label class="block text-sm font-medium text-gray-200 mb-1">
                     Video Title
                 </label>
-                <input
-                    type="text"
-                    name="title"
-                    placeholder="Enter video title..."
+                <input type="text" name="title" placeholder="Enter video title..."
                     class="w-full px-4 py-2 rounded-lg bg-white/20 border border-white/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    required
-                >
+                    required>
             </div>
 
             {{-- File Upload --}}
@@ -58,25 +56,18 @@
                 <label class="block text-sm font-medium text-gray-200 mb-1">
                     Select Video File
                 </label>
-                <input
-                    type="file"
-                    name="video"
-                    class="w-full text-sm text-gray-200
+                <input type="file" name="video" class="w-full text-sm text-gray-200
                            file:mr-4 file:py-2 file:px-4
                            file:rounded-lg file:border-0
                            file:text-sm file:font-semibold
                            file:bg-indigo-600 file:text-white
                            hover:file:bg-indigo-700
-                           cursor-pointer"
-                    required
-                >
+                           cursor-pointer" required>
             </div>
 
             {{-- Submit Button --}}
-            <button
-                type="submit"
-                class="w-full py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 transition duration-300 text-white font-semibold shadow-lg"
-            >
+            <button type="submit"
+                class="w-full py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 transition duration-300 text-white font-semibold shadow-lg">
                 Upload Video
             </button>
         </form>
@@ -88,4 +79,5 @@
     </div>
 
 </body>
+
 </html>
